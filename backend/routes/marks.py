@@ -1,0 +1,156 @@
+from flask import Blueprint, request, jsonify, send_file
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime
+from extensions import db
+from models.user import User
+from models.attendance import Subject
+from models.marks import Marks
+from services.marks_calc import get_marks_stats
+from services.pdf_service import generate_marks_pdf
+import io
+
+marks_bp = Blueprint("marks", __name__)
+
+
+@marks_bp.route("/<int:subject_id>", methods=["GET"])
+@jwt_required()
+def get_marks(subject_id):
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        return jsonify({"message": "Subject not found."}), 404
+
+    marks = Marks.query.filter_by(subject_id=subject_id).all()
+    return jsonify([m.to_dict() for m in marks]), 200
+
+
+@marks_bp.route("/bulk", methods=["POST"])
+@jwt_required()
+def bulk_save():
+    data = request.get_json()
+    subject_id = data.get("subject_id")
+    marks_list = data.get("marks", [])
+
+    if not subject_id:
+        return jsonify({"message": "subject_id is required."}), 400
+
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        return jsonify({"message": "Subject not found."}), 404
+
+    for item in marks_list:
+        student_id = item.get("student_id")
+        if not student_id:
+            continue
+
+        existing = Marks.query.filter_by(
+            student_id=student_id,
+            subject_id=subject_id
+        ).first()
+
+        if existing:
+            if existing.is_locked:
+                continue
+            existing.ia1_score = item.get("ia1_score", existing.ia1_score)
+            existing.ia2_score = item.get("ia2_score", existing.ia2_score)
+            existing.model_score = item.get("model_score", existing.model_score)
+            existing.assignment_score = item.get("assignment_score", existing.assignment_score)
+            existing.attendance_marks = item.get("attendance_marks", existing.attendance_marks)
+            existing.compute_total()
+        else:
+            mark = Marks(
+                student_id=student_id,
+                subject_id=subject_id,
+                ia1_score=item.get("ia1_score"),
+                ia2_score=item.get("ia2_score"),
+                model_score=item.get("model_score"),
+                assignment_score=item.get("assignment_score"),
+                attendance_marks=item.get("attendance_marks"),
+            )
+            mark.compute_total()
+            db.session.add(mark)
+
+    db.session.commit()
+    return jsonify({"message": "Marks saved successfully."}), 200
+
+
+@marks_bp.route("/<int:marks_id>", methods=["PUT"])
+@jwt_required()
+def update_mark(marks_id):
+    data = request.get_json()
+    mark = Marks.query.get(marks_id)
+
+    if not mark:
+        return jsonify({"message": "Marks record not found."}), 404
+
+    if mark.is_locked:
+        return jsonify({"message": "Marks are locked. Contact admin to unlock."}), 403
+
+    if "ia1_score" in data:
+        mark.ia1_score = data["ia1_score"]
+    if "ia2_score" in data:
+        mark.ia2_score = data["ia2_score"]
+    if "model_score" in data:
+        mark.model_score = data["model_score"]
+    if "assignment_score" in data:
+        mark.assignment_score = data["assignment_score"]
+    if "attendance_marks" in data:
+        mark.attendance_marks = data["attendance_marks"]
+
+    mark.compute_total()
+    db.session.commit()
+
+    return jsonify(mark.to_dict()), 200
+
+
+@marks_bp.route("/<int:subject_id>/submit", methods=["POST"])
+@jwt_required()
+def submit_marks(subject_id):
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        return jsonify({"message": "Subject not found."}), 404
+
+    marks = Marks.query.filter_by(subject_id=subject_id).all()
+
+    if not marks:
+        return jsonify({"message": "No marks found for this subject."}), 404
+
+    for mark in marks:
+        mark.is_locked = True
+        mark.submitted_at = datetime.utcnow()
+
+    db.session.commit()
+
+    return jsonify({"message": f"Marks submitted and locked for {len(marks)} students."}), 200
+
+
+@marks_bp.route("/<int:subject_id>/stats", methods=["GET"])
+@jwt_required()
+def marks_stats(subject_id):
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        return jsonify({"message": "Subject not found."}), 404
+
+    stats = get_marks_stats(subject_id)
+    return jsonify(stats), 200
+
+
+@marks_bp.route("/<int:subject_id>/pdf", methods=["GET"])
+@jwt_required()
+def download_pdf(subject_id):
+    subject = Subject.query.get(subject_id)
+    if not subject:
+        return jsonify({"message": "Subject not found."}), 404
+
+    marks = Marks.query.filter_by(subject_id=subject_id).all()
+
+    if not marks:
+        return jsonify({"message": "No marks found for this subject."}), 404
+
+    pdf_buffer = generate_marks_pdf(subject, marks)
+
+    return send_file(
+        io.BytesIO(pdf_buffer),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"marksheet_{subject.code}.pdf"
+    )

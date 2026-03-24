@@ -1,18 +1,18 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-  NavLink,
-  useLocation,
+    BrowserRouter,
+    Navigate,
+    NavLink,
+    Route,
+    Routes,
+    useLocation,
 } from 'react-router-dom';
 import { authApi } from './api/client';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
+import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
 import Marks from './pages/Marks';
 import Notifications from './pages/Notifications';
 import StudentView from './pages/StudentView';
