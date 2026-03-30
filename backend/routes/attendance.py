@@ -27,7 +27,7 @@ def create_session():
     ).first()
 
     if existing:
-        return jsonify({"message": "A session already exists for this subject, date, and period."}), 409
+        return jsonify(existing.to_dict()), 200
 
     session = AttendanceSession(
         subject_id=data["subject_id"],

@@ -231,7 +231,7 @@ export default function Attendance() {
             disabled={creating || !selectedSubject}
             className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
           >
-            {creating ? 'Creating...' : 'Start Session'}
+            {creating ? 'Loading...' : 'Load / Start Session'}
           </button>
           <button
             onClick={handleMarkHoliday}

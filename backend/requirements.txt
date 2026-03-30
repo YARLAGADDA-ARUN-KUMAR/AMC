@@ -5,3 +5,8 @@ flask-cors
 bcrypt
 python-dotenv
 reportlab
+opencv-python
+torch
+torchvision
+numpy
+Pillow

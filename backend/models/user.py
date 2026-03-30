@@ -97,6 +97,7 @@ class User(db.Model):
     parent_email = db.Column(db.String(150), nullable=True)
     roll_number = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    face_encoding = db.Column(db.Text, nullable=True)
 
     department = db.relationship("Department", foreign_keys=[department_id], back_populates="users")
     attendance_records = db.relationship("AttendanceRecord", foreign_keys="AttendanceRecord.student_id", back_populates="student")

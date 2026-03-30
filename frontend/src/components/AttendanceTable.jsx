@@ -1,18 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { attendanceApi } from '../api/client';
 
 export default function AttendanceTable({ students, sessionId, onSaved }) {
-  const [records, setRecords] = useState(
-    students.map((s) => ({
-      student_id: s.id,
-      status: 'present',
-      name: s.name,
-      roll_number: s.roll_number,
-    })),
-  );
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [condoneModal, setCondoneModal] = useState(null);
   const [condoneReason, setCondoneReason] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    attendanceApi.getSessionRecords(sessionId).then((res) => {
+      const fetchedMap = {};
+      res.data.forEach((r) => {
+        fetchedMap[r.student_id] = { status: r.status, face_detected: r.face_detected };
+      });
+      
+      setRecords(students.map((s) => ({
+        student_id: s.id,
+        name: s.name,
+        roll_number: s.roll_number,
+        status: fetchedMap[s.id]?.status || 'present',
+        face_detected: fetchedMap[s.id]?.face_detected || false
+      })));
+    }).finally(() => setLoading(false));
+  }, [sessionId, students]);
 
   const markAll = (status) => {
     setRecords((prev) => prev.map((r) => ({ ...r, status })));
@@ -76,12 +88,21 @@ export default function AttendanceTable({ students, sessionId, onSaved }) {
     late: 'bg-amber-500',
   };
 
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-12 text-center flex flex-col items-center">
+        <div className="w-8 h-8 rounded-full border-4 border border-indigo-200 border-t-indigo-600 animate-spin mb-4" />
+        <p className="text-sm font-medium text-slate-500">Loading session records...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold text-slate-800">
-            Mark Attendance
+            {records.some(r => r.face_detected) ? 'Attendance Records' : 'Mark Attendance'}
           </h2>
           <div className="flex items-center gap-2 text-sm">
             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-medium">
@@ -134,7 +155,15 @@ export default function AttendanceTable({ students, sessionId, onSaved }) {
                   {record.roll_number}
                 </td>
                 <td className="px-6 py-3 font-medium text-slate-800">
-                  {record.name}
+                  <div className="flex items-center gap-2">
+                    {record.name}
+                    {record.face_detected && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-200" title="AI Verification">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        AI Verified
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-3 text-center">
                   <button

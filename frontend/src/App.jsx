@@ -12,6 +12,7 @@ import {
 import { authApi } from './api/client';
 import Attendance from './pages/Attendance';
 import Dashboard from './pages/Dashboard';
+import FaceAttendance from './pages/FaceAttendance';
 import Login from './pages/Login';
 import Marks from './pages/Marks';
 import Notifications from './pages/Notifications';
@@ -55,6 +56,25 @@ function Sidebar({ user, onLogout }) {
             strokeLinejoin="round"
             strokeWidth={2}
             d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+          />
+        </svg>
+      ),
+    },
+    {
+      path: '/face-attendance',
+      label: 'Face Attendance',
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
           />
         </svg>
       ),
@@ -188,6 +208,7 @@ function MobileNav({ user, onLogout }) {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/attendance', label: 'Attendance' },
+    { path: '/face-attendance', label: 'Face Attendance' },
     { path: '/marks', label: 'Marks' },
     { path: '/notifications', label: 'Notifications' },
   ];
@@ -298,6 +319,7 @@ function LecturerLayout({ user, onLogout }) {
         <Routes>
           <Route path="/dashboard" element={<Dashboard user={user} />} />
           <Route path="/attendance" element={<Attendance />} />
+          <Route path="/face-attendance" element={<FaceAttendance />} />
           <Route path="/marks" element={<Marks />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

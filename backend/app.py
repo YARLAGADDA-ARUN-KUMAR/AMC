@@ -17,6 +17,7 @@ def create_app():
     from routes.notifications import notifications_bp
     from routes.students import students_bp
     from routes.dashboard import dashboard_bp
+    from routes.face_recognition import face_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(attendance_bp, url_prefix="/api/attendance")
@@ -24,6 +25,7 @@ def create_app():
     app.register_blueprint(notifications_bp, url_prefix="/api/notify")
     app.register_blueprint(students_bp, url_prefix="/api/students")
     app.register_blueprint(dashboard_bp, url_prefix="/api/dashboard")
+    app.register_blueprint(face_bp, url_prefix="/api/face")
 
     with app.app_context():
         db.create_all()

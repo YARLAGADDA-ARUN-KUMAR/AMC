@@ -38,10 +38,12 @@ export const studentsApi = {
   create: (data) => api.post('/students', data),
 
   update: (id, data) => api.put(`/students/${id}`, data),
+  
+  delete: (id) => api.delete(`/students/${id}`),
 };
 
 export const subjectsApi = {
-  list: () => api.get('/subjects'),
+  list: () => api.get('/attendance/subjects'),
 };
 
 export const attendanceApi = {
@@ -103,6 +105,22 @@ export const notifyApi = {
 
 export const dashboardApi = {
   getStats: () => api.get('/dashboard/stats'),
+};
+
+export const faceApi = {
+  recognize: (image, subject_id, session_id) =>
+    api.post('/face/recognize', { image, subject_id, session_id }),
+
+  getStudents: (subject_id) => api.get(`/face/students/${subject_id}`),
+
+  getRecognized: (session_id) =>
+    api.get(`/face/session/${session_id}/recognized`),
+
+  saveAttendance: (session_id) =>
+    api.post(`/face/session/${session_id}/save`),
+
+  registerFace: (student_id, images) =>
+    api.post('/face/register', { student_id, images }),
 };
 
 export default api;

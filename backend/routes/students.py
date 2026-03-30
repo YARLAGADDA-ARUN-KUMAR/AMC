@@ -113,3 +113,22 @@ def update_student(student_id):
 
     db.session.commit()
     return jsonify(student.to_dict()), 200
+
+
+@students_bp.route("/<int:student_id>", methods=["DELETE"])
+@jwt_required()
+def delete_student(student_id):
+    student = User.query.get(student_id)
+    if not student or student.role != "student":
+        return jsonify({"message": "Student not found."}), 404
+
+    # Delete dependencies to avoid foreign key constraints
+    AttendanceRecord.query.filter_by(student_id=student_id).delete()
+    Marks.query.filter_by(student_id=student_id).delete()
+    
+    # Alternatively, delete face session recognized sets if applicable (safe to ignore as it's in-memory)
+    
+    db.session.delete(student)
+    db.session.commit()
+
+    return jsonify({"message": "Student deleted successfully."}), 200

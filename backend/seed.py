@@ -70,9 +70,7 @@ def seed():
         db.session.flush()
 
         subjects_data = [
-            ("Data Structures", "CS301", 3),
-            ("Operating Systems", "CS302", 3),
-            ("Database Management", "CS303", 3),
+            ("Python Programming", "CS301", 3),
         ]
 
         subjects = []
