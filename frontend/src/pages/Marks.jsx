@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { marksApi, notifyApi, studentsApi, subjectsApi } from '../api/client';
 import MarksTable from '../components/MarksTable';
-import StatsSummary from '../components/StatsSummary';
 import StudentPanel from '../components/StudentPanel';
 
 export default function Marks() {
@@ -13,6 +12,7 @@ export default function Marks() {
   const [tab, setTab] = useState('entry');
   const [notifying, setNotifying] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [failedStudents, setFailedStudents] = useState([]);
 
   useEffect(() => {
     subjectsApi.list().then((res) => {
@@ -28,8 +28,9 @@ export default function Marks() {
       .getBySubject(selectedSubject)
       .then((res) => {
         const failed = res.data.filter((m) => m.total != null && m.total < 50);
-
+        setFailedStudents(failed);
       })
+      .catch(() => setFailedStudents([]));
   }, [selectedSubject]);
 
   const showSuccess = (msg) => {
@@ -49,8 +50,6 @@ export default function Marks() {
       setNotifying(false);
     }
   };
-
-
 
   const getGrade = (total) => {
     if (total == null) return '—';
@@ -73,7 +72,7 @@ export default function Marks() {
 
   const tabs = [
     { key: 'entry', label: 'Marks Entry' },
-    { key: 'stats', label: 'Statistics' },
+    { key: 'failed', label: `Failed (${failedStudents.length})` },
   ];
 
   const currentSubject = subjects.find((s) => s.id === Number(selectedSubject));
@@ -157,7 +156,6 @@ export default function Marks() {
           )}
 
           <div className="flex items-center gap-2 ml-auto">
-
             <button
               onClick={handleNotifyMarks}
               disabled={notifying || !selectedSubject}
@@ -184,10 +182,10 @@ export default function Marks() {
 
       <div className="grid grid-cols-4 gap-4">
         {[
-          { label: 'IA 1', max: '25', color: 'indigo' },
-          { label: 'IA 2', max: '25', color: 'violet' },
-          { label: 'Model Exam', max: '25', color: 'emerald' },
-          { label: 'Assignment', max: '10', color: 'amber' },
+          { label: 'CLA 1', max: '15', color: 'indigo' },
+          { label: 'CLA 2', max: '15', color: 'violet' },
+          { label: 'CLA 3', max: '15', color: 'violet' },
+          { label: 'Model Exam', max: '40', color: 'emerald' },
         ].map((item) => (
           <div
             key={item.label}
@@ -264,12 +262,57 @@ export default function Marks() {
         </div>
       )}
 
-      {tab === 'stats' && (
-        <div className="space-y-4">
-          {selectedSubject && <StatsSummary subjectId={selectedSubject} />}
+      {tab === 'failed' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h2 className="text-base font-semibold text-slate-800">
+              Failed Students (Below 50 marks)
+            </h2>
+          </div>
+          {failedStudents.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-sm">
+              No failed students in this subject.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-100">
+                    <th className="px-6 py-3 text-left font-medium">Student</th>
+                    <th className="px-6 py-3 text-left font-medium">Roll No</th>
+                    <th className="px-6 py-3 text-center font-medium">
+                      Total Marks
+                    </th>
+                    <th className="px-6 py-3 text-center font-medium">Grade</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {failedStudents.map((m) => (
+                    <tr key={m.id} className="bg-red-50/30 hover:bg-red-50">
+                      <td className="px-6 py-3 font-medium text-slate-800">
+                        {m.student_name}
+                      </td>
+                      <td className="px-6 py-3 font-mono text-slate-600">
+                        {m.roll_number}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <span className="text-red-600 font-bold">
+                          {m.total}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full border text-red-700 bg-red-50 border-red-200">
+                          F
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
-
 
       {selectedStudent && (
         <StudentPanel

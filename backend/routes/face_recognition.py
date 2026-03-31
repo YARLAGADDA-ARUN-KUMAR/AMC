@@ -101,8 +101,8 @@ def recognize():
         if s.face_encoding:
             try:
                 registered_encodings[str(s.id)] = json.loads(s.face_encoding)
-            except (json.JSONDecodeError, TypeError):
-                pass
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Warning: Invalid face encoding for student {s.id}: {e}")
 
     service = get_face_service()
     result = service.recognize_from_frame(image, student_list, session_id, registered_encodings)

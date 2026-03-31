@@ -121,7 +121,7 @@ export default function Notifications() {
       id: 'low_attendance',
       title: 'Low Attendance Warning',
       desc: "Send warning to students below 85% and urgent alert to students below 75% with 'X classes you can still miss' calculation.",
-      recipients: 'Students + Parents (+ HOD if below 75%)',
+      recipients: 'Students  (+ HOD if below 75%)',
       icon: (
         <svg
           className="w-5 h-5"
@@ -145,7 +145,7 @@ export default function Notifications() {
       id: 'marks_published',
       title: 'Marks Published',
       desc: 'Send full score breakdown — IA1, IA2, Model, Assignment, Total, Grade — to all students and parents.',
-      recipients: 'All students + Parents',
+      recipients: 'All students',
       icon: (
         <svg
           className="w-5 h-5"
@@ -209,7 +209,7 @@ export default function Notifications() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Notifications</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Send alerts to students, parents, and HOD via email
+            Send alerts to students and HOD via email
           </p>
         </div>
         <div className="flex items-center gap-3">

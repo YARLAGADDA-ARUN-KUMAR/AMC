@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dashboardApi, attendanceApi } from '../api/client';
-import AttendanceChart from '../components/AttendanceChart';
 
 export default function Dashboard({ user }) {
   const [stats, setStats] = useState(null);
-  const [defaulters, setDefaulters] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    Promise.all([dashboardApi.getStats(), attendanceApi.getDefaulters()])
-      .then(([statsRes, defaultersRes]) => {
+    Promise.all([dashboardApi.getStats()])
+      .then(([statsRes]) => {
         setStats(statsRes.data);
-        setDefaulters(defaultersRes.data);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -264,12 +261,6 @@ export default function Dashboard({ user }) {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/attendance')}
-            className="shrink-0 text-sm font-semibold text-red-700 hover:text-red-900 underline underline-offset-2 transition-colors"
-          >
-            View Defaulters
-          </button>
         </div>
       )}
 
@@ -328,97 +319,6 @@ export default function Dashboard({ user }) {
               </svg>
             </button>
           ))}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-3">
-            Attendance Overview
-          </h2>
-          <AttendanceChart
-            subjectId={null}
-            dashboardMode
-            stats={stats?.distribution}
-          />
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
-              Defaulter List
-            </h2>
-            <button
-              onClick={() => navigate('/attendance')}
-              className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-            >
-              View All
-            </button>
-          </div>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            {defaulters.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                <svg
-                  className="w-8 h-8 mb-2 text-emerald-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <p className="text-sm font-medium text-slate-500">
-                  No defaulters
-                </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  All students above 75%
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100">
-                {defaulters.slice(0, 6).map((d) => (
-                  <div
-                    key={`${d.student_id}-${d.subject_name}`}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">
-                        {d.student_name}
-                      </p>
-                      <p className="text-xs text-slate-400 truncate">
-                        {d.subject_name}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 ml-3">
-                      <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-red-500 rounded-full"
-                          style={{ width: `${d.percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold text-red-600 w-10 text-right">
-                        {d.percentage.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                {defaulters.length > 6 && (
-                  <div className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => navigate('/attendance')}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                    >
-                      +{defaulters.length - 6} more students
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

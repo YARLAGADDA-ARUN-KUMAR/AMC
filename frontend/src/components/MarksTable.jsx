@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { marksApi } from '../api/client';
+import { marksApi, studentsApi } from '../api/client';
 
 export default function MarksTable({ subjectId, onSubmitted }) {
   const [marks, setMarks] = useState([]);
+  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -11,19 +12,44 @@ export default function MarksTable({ subjectId, onSubmitted }) {
   const PASS_MARK = 50;
 
   const fields = [
-    { key: 'ia1_score', label: 'IA 1', max: 25 },
-    { key: 'ia2_score', label: 'IA 2', max: 25 },
-    { key: 'model_score', label: 'Model', max: 25 },
-    { key: 'assignment_score', label: 'Assignment', max: 10 },
-    { key: 'attendance_marks', label: 'Attendance', max: 5 },
+    { key: 'cla1_score', label: 'CLA 1', max: 15 },
+    { key: 'cla2_score', label: 'CLA 2', max: 15 },
+    { key: 'cla3_score', label: 'CLA 3', max: 15 },
+    { key: 'model_score', label: 'Model Exam', max: 40 },
   ];
 
   useEffect(() => {
     if (!subjectId) return;
     setLoading(true);
-    marksApi
-      .getBySubject(subjectId)
-      .then((res) => setMarks(res.data))
+    Promise.all([marksApi.getBySubject(subjectId), studentsApi.list()])
+      .then(([marksRes, studentsRes]) => {
+        const existingMarks = marksRes.data;
+        const allStudents = studentsRes.data;
+        const marksByStudentId = {};
+        existingMarks.forEach((m) => {
+          marksByStudentId[m.student_id] = m;
+        });
+        const merged = allStudents.map((student) => {
+          if (marksByStudentId[student.id]) {
+            return marksByStudentId[student.id];
+          }
+          return {
+            id: null,
+            student_id: student.id,
+            student_name: student.name,
+            roll_number: student.roll_number,
+            subject_id: subjectId,
+            cla1_score: null,
+            cla2_score: null,
+            cla3_score: null,
+            model_score: null,
+            total: null,
+            is_locked: false,
+          };
+        });
+        setMarks(merged);
+        setStudents(allStudents);
+      })
       .catch(() => alert('Failed to load marks.'))
       .finally(() => setLoading(false));
   }, [subjectId]);
@@ -34,10 +60,16 @@ export default function MarksTable({ subjectId, onSubmitted }) {
   };
 
   const handleChange = (studentId, field, value) => {
+    const fieldDef = fields.find((f) => f.key === field);
+    let numValue = parseFloat(value);
+    if (isNaN(numValue)) numValue = '';
+    else if (numValue < 0) numValue = 0;
+    else if (fieldDef && numValue > fieldDef.max) numValue = fieldDef.max;
+
     setMarks((prev) =>
       prev.map((m) => {
         if (m.student_id !== studentId) return m;
-        const updated = { ...m, [field]: value };
+        const updated = { ...m, [field]: numValue };
         updated.total = computeTotal(updated);
         return updated;
       }),
@@ -97,26 +129,7 @@ export default function MarksTable({ subjectId, onSubmitted }) {
     }
   };
 
-  const isLocked = marks.length > 0 && marks[0].is_locked;
-
-  const classAverage =
-    marks.length > 0
-      ? (
-          marks.reduce((sum, m) => sum + (m.total || 0), 0) / marks.length
-        ).toFixed(1)
-      : 0;
-
-  const topper = marks.reduce(
-    (best, m) => (m.total > (best?.total || 0) ? m : best),
-    null,
-  );
-
-  const lowestScorer = marks.reduce(
-    (low, m) => (m.total < (low?.total ?? Infinity) ? m : low),
-    null,
-  );
-
-  const failCount = marks.filter((m) => (m.total || 0) < PASS_MARK).length;
+  const isLocked = marks.length > 0 && marks.some((m) => m.is_locked);
 
   if (loading) {
     return (
@@ -177,41 +190,6 @@ export default function MarksTable({ subjectId, onSubmitted }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-4 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50">
-        <div className="px-6 py-3">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-            Class Average
-          </p>
-          <p className="text-2xl font-bold text-indigo-600">{classAverage}</p>
-        </div>
-        <div className="px-6 py-3">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-            Topper
-          </p>
-          <p className="text-sm font-semibold text-slate-800 truncate">
-            {topper?.student_name || '—'}
-          </p>
-          <p className="text-lg font-bold text-emerald-600">
-            {topper?.total ?? '—'}
-          </p>
-        </div>
-        <div className="px-6 py-3">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-            Lowest Score
-          </p>
-          <p className="text-lg font-bold text-rose-500">
-            {lowestScorer?.total ?? '—'}
-          </p>
-        </div>
-        <div className="px-6 py-3">
-          <p className="text-xs text-slate-500 uppercase tracking-wide font-medium">
-            Below Pass Mark
-          </p>
-          <p className="text-2xl font-bold text-red-600">{failCount}</p>
-          <p className="text-xs text-slate-400">of {marks.length} students</p>
-        </div>
-      </div>
-
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -230,7 +208,7 @@ export default function MarksTable({ subjectId, onSubmitted }) {
                 </th>
               ))}
               <th className="px-4 py-3 text-center font-medium">
-                Total<span className="text-slate-400 normal-case">/90</span>
+                Total<span className="text-slate-400 normal-case">/85</span>
               </th>
               <th className="px-4 py-3 text-center font-medium">Status</th>
             </tr>

@@ -47,24 +47,33 @@ def bulk_save():
             subject_id=subject_id
         ).first()
 
+        def clamp(val, max_val):
+            if val is None:
+                return None
+            try:
+                v = float(val)
+                return max(0, min(v, max_val))
+            except (TypeError, ValueError):
+                return None
+
         if existing:
             if existing.is_locked:
                 continue
-            existing.ia1_score = item.get("ia1_score", existing.ia1_score)
-            existing.ia2_score = item.get("ia2_score", existing.ia2_score)
-            existing.model_score = item.get("model_score", existing.model_score)
-            existing.assignment_score = item.get("assignment_score", existing.assignment_score)
-            existing.attendance_marks = item.get("attendance_marks", existing.attendance_marks)
+            existing.ia1_score = clamp(item.get("ia1_score"), 25)
+            existing.ia2_score = clamp(item.get("ia2_score"), 25)
+            existing.model_score = clamp(item.get("model_score"), 25)
+            existing.assignment_score = clamp(item.get("assignment_score"), 10)
+            existing.attendance_marks = clamp(item.get("attendance_marks"), 5)
             existing.compute_total()
         else:
             mark = Marks(
                 student_id=student_id,
                 subject_id=subject_id,
-                ia1_score=item.get("ia1_score"),
-                ia2_score=item.get("ia2_score"),
-                model_score=item.get("model_score"),
-                assignment_score=item.get("assignment_score"),
-                attendance_marks=item.get("attendance_marks"),
+                ia1_score=clamp(item.get("ia1_score"), 25),
+                ia2_score=clamp(item.get("ia2_score"), 25),
+                model_score=clamp(item.get("model_score"), 25),
+                assignment_score=clamp(item.get("assignment_score"), 10),
+                attendance_marks=clamp(item.get("attendance_marks"), 5),
             )
             mark.compute_total()
             db.session.add(mark)
@@ -85,16 +94,25 @@ def update_mark(marks_id):
     if mark.is_locked:
         return jsonify({"message": "Marks are locked. Contact admin to unlock."}), 403
 
+    def clamp(val, max_val):
+        if val is None:
+            return None
+        try:
+            v = float(val)
+            return max(0, min(v, max_val))
+        except (TypeError, ValueError):
+            return None
+
     if "ia1_score" in data:
-        mark.ia1_score = data["ia1_score"]
+        mark.ia1_score = clamp(data["ia1_score"], 25)
     if "ia2_score" in data:
-        mark.ia2_score = data["ia2_score"]
+        mark.ia2_score = clamp(data["ia2_score"], 25)
     if "model_score" in data:
-        mark.model_score = data["model_score"]
+        mark.model_score = clamp(data["model_score"], 25)
     if "assignment_score" in data:
-        mark.assignment_score = data["assignment_score"]
+        mark.assignment_score = clamp(data["assignment_score"], 10)
     if "attendance_marks" in data:
-        mark.attendance_marks = data["attendance_marks"]
+        mark.attendance_marks = clamp(data["attendance_marks"], 5)
 
     mark.compute_total()
     db.session.commit()

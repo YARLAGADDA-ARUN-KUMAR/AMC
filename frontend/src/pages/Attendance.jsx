@@ -12,7 +12,6 @@ export default function Attendance() {
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [summary, setSummary] = useState([]);
-  const [defaulters, setDefaulters] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split('T')[0],
@@ -39,11 +38,9 @@ export default function Attendance() {
     Promise.all([
       studentsApi.list(),
       attendanceApi.getSummary(selectedSubject),
-      attendanceApi.getDefaulters(),
-    ]).then(([studRes, sumRes, defRes]) => {
+    ]).then(([studRes, sumRes]) => {
       setStudents(studRes.data);
       setSummary(sumRes.data);
-      setDefaulters(defRes.data);
     });
   }, [selectedSubject]);
 
@@ -130,7 +127,6 @@ export default function Attendance() {
   const tabs = [
     { key: 'mark', label: 'Mark Attendance' },
     { key: 'summary', label: 'Summary' },
-    { key: 'defaulters', label: `Defaulters (${defaulters.length})` },
   ];
 
   return (
@@ -439,107 +435,6 @@ export default function Attendance() {
         </div>
       )}
 
-      {tab === 'defaulters' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-slate-800">
-                Defaulter List
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Students below 75% attendance in any subject
-              </p>
-            </div>
-            <span className="px-3 py-1 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full">
-              {defaulters.length} defaulters
-            </span>
-          </div>
-          {defaulters.length === 0 ? (
-            <div className="text-center py-12">
-              <svg
-                className="w-10 h-10 text-emerald-400 mx-auto mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-slate-500 font-medium">No defaulters</p>
-              <p className="text-slate-400 text-sm mt-1">
-                All students are above 75% attendance
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                    <th className="px-6 py-3 text-left font-medium">#</th>
-                    <th className="px-6 py-3 text-left font-medium">Student</th>
-                    <th className="px-6 py-3 text-left font-medium">Roll No</th>
-                    <th className="px-6 py-3 text-left font-medium">Subject</th>
-                    <th className="px-6 py-3 text-center font-medium">
-                      Attended
-                    </th>
-                    <th className="px-6 py-3 text-center font-medium">
-                      Missed
-                    </th>
-                    <th className="px-6 py-3 text-center font-medium">
-                      Percentage
-                    </th>
-                    <th className="px-6 py-3 text-center font-medium">
-                      Profile
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {defaulters.map((d, idx) => (
-                    <tr
-                      key={`${d.student_id}-${d.subject_name}`}
-                      className="bg-red-50/30 hover:bg-red-50 transition-colors"
-                    >
-                      <td className="px-6 py-3 text-slate-400">{idx + 1}</td>
-                      <td className="px-6 py-3 font-medium text-slate-800">
-                        {d.student_name}
-                      </td>
-                      <td className="px-6 py-3 font-mono text-slate-600">
-                        {d.roll_number}
-                      </td>
-                      <td className="px-6 py-3 text-slate-600">
-                        {d.subject_name}
-                      </td>
-                      <td className="px-6 py-3 text-center text-slate-600">
-                        {d.attended}
-                      </td>
-                      <td className="px-6 py-3 text-center text-red-600 font-medium">
-                        {d.missed}
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <span className="text-xs font-bold text-red-700 bg-red-100 border border-red-200 px-2.5 py-1 rounded-full">
-                          {d.percentage.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 text-center">
-                        <button
-                          onClick={() => setSelectedStudent(d.student_id)}
-                          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-2"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
 
       {selectedStudent && (
         <StudentPanel
