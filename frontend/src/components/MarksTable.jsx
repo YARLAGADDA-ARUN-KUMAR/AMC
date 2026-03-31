@@ -1,13 +1,10 @@
 import { useState, useEffect } from 'react';
 import { marksApi, studentsApi } from '../api/client';
 
-export default function MarksTable({ subjectId, onSubmitted }) {
+export default function MarksTable({ subjectId }) {
   const [marks, setMarks] = useState([]);
-  const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [confirmSubmit, setConfirmSubmit] = useState(false);
 
   const PASS_MARK = 50;
 
@@ -48,7 +45,6 @@ export default function MarksTable({ subjectId, onSubmitted }) {
           };
         });
         setMarks(merged);
-        setStudents(allStudents);
       })
       .catch(() => alert('Failed to load marks.'))
       .finally(() => setLoading(false));
@@ -100,20 +96,6 @@ export default function MarksTable({ subjectId, onSubmitted }) {
     }
   };
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    try {
-      await marksApi.submit(subjectId);
-      setConfirmSubmit(false);
-      if (onSubmitted) onSubmitted();
-      setMarks((prev) => prev.map((m) => ({ ...m, is_locked: true })));
-    } catch {
-      alert('Failed to submit marks.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleDownloadPdf = async () => {
     try {
       const res = await marksApi.downloadPdf(subjectId);
@@ -146,7 +128,7 @@ export default function MarksTable({ subjectId, onSubmitted }) {
           <h2 className="text-lg font-semibold text-slate-800">Marks Entry</h2>
           {isLocked && (
             <span className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-              Locked — Submitted to HOD
+              Locked
             </span>
           )}
         </div>
@@ -171,21 +153,13 @@ export default function MarksTable({ subjectId, onSubmitted }) {
             Export PDF
           </button>
           {!isLocked && (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-60 transition-colors"
-              >
-                {saving ? 'Saving...' : 'Save All'}
-              </button>
-              <button
-                onClick={() => setConfirmSubmit(true)}
-                className="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-colors shadow-sm"
-              >
-                Submit to HOD
-              </button>
-            </>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-60 transition-colors"
+            >
+              {saving ? 'Saving...' : 'Save All'}
+            </button>
           )}
         </div>
       </div>
@@ -272,55 +246,6 @@ export default function MarksTable({ subjectId, onSubmitted }) {
         </table>
       </div>
 
-      {confirmSubmit && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-amber-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold text-slate-800">
-                Submit to HOD?
-              </h3>
-            </div>
-            <p className="text-sm text-slate-500 mb-6">
-              Once submitted, marks will be{' '}
-              <span className="font-semibold text-slate-700">
-                locked and cannot be edited
-              </span>
-              . Only the admin can unlock them. Make sure all scores are correct
-              before proceeding.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmSubmit(false)}
-                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-colors"
-              >
-                {submitting ? 'Submitting...' : 'Yes, Submit'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -25,11 +25,10 @@ class Marks(db.Model):
 
     def compute_total(self):
         scores = [
-            self.ia1_score or 0,
-            self.ia2_score or 0,
+            self.cla1_score or 0,
+            self.cla2_score or 0,
+            self.cla3_score or 0,
             self.model_score or 0,
-            self.assignment_score or 0,
-            self.attendance_marks or 0,
         ]
         self.total = round(sum(scores), 2)
         return self.total
@@ -60,11 +59,10 @@ class Marks(db.Model):
             "roll_number": self.student.roll_number if self.student else None,
             "subject_id": self.subject_id,
             "subject_name": self.subject.name if self.subject else None,
-            "ia1_score": self.ia1_score,
-            "ia2_score": self.ia2_score,
+            "cla1_score": self.cla1_score,
+            "cla2_score": self.cla2_score,
+            "cla3_score": self.cla3_score,
             "model_score": self.model_score,
-            "assignment_score": self.assignment_score,
-            "attendance_marks": self.attendance_marks,
             "total": self.total,
             "grade": self.get_grade(),
             "is_locked": self.is_locked,

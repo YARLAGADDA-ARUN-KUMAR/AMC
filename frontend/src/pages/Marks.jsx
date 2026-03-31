@@ -246,18 +246,11 @@ export default function Marks() {
                 Tab
               </kbd>{' '}
               to move between cells quickly. Click{' '}
-              <span className="font-semibold">Save All</span> when done, then{' '}
-              <span className="font-semibold">Submit to HOD</span> to lock
-              marks.
+              <span className="font-semibold">Save All</span> when done.
             </p>
           </div>
           {selectedSubject && (
-            <MarksTable
-              subjectId={selectedSubject}
-              onSubmitted={() =>
-                showSuccess('Marks submitted to HOD and locked successfully.')
-              }
-            />
+            <MarksTable subjectId={selectedSubject} />
           )}
         </div>
       )}

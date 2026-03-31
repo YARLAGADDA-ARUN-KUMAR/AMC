@@ -111,15 +111,14 @@ def build_marks_email(student_name, subject_name, subject_code, mark):
                 <th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Score</th>
                 <th style="padding:8px;border:1px solid #e2e8f0;text-align:center;">Max</th>
             </tr>
-            {score_row("Internal Assessment 1", mark.ia1_score, 25)}
-            {score_row("Internal Assessment 2", mark.ia2_score, 25)}
-            {score_row("Model Examination", mark.model_score, 25)}
-            {score_row("Assignment", mark.assignment_score, 10)}
-            {score_row("Attendance Marks", mark.attendance_marks, 5)}
+            {score_row("CLA 1", mark.cla1_score, 15)}
+            {score_row("CLA 2", mark.cla2_score, 15)}
+            {score_row("CLA 3", mark.cla3_score, 15)}
+            {score_row("Model Examination", mark.model_score, 40)}
             <tr style="background:#f8fafc;font-weight:bold;">
                 <td style="padding:8px;border:1px solid #e2e8f0;">Total</td>
                 <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;color:{color};">{mark.total if mark.total is not None else '—'}</td>
-                <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;color:#94a3b8;">90</td>
+                <td style="padding:8px;border:1px solid #e2e8f0;text-align:center;color:#94a3b8;">85</td>
             </tr>
         </table>
         <p>Grade: <strong>{grade}</strong> &nbsp;|&nbsp; Result: <strong style="color:{color};">{result_text}</strong></p>

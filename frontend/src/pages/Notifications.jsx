@@ -1,19 +1,19 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from 'react';
-import { notifyApi, subjectsApi, attendanceApi } from '../api/client';
+import { notifyApi, subjectsApi } from '../api/client';
 
 export default function Notifications() {
   const [subjects, setSubjects] = useState([]);
-  const [sessions, setSessions] = useState([]);
   const [log, setLog] = useState([]);
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedSession, setSelectedSession] = useState('');
   const [loadingLog, setLoadingLog] = useState(true);
   const [sending, setSending] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [lastSendType, setLastSendType] = useState('');
+  const [lastSendResults, setLastSendResults] = useState([]);
 
   useEffect(() => {
     subjectsApi.list().then((res) => {
@@ -47,21 +47,14 @@ export default function Notifications() {
   const handleSend = async (type) => {
     setSending(type);
     try {
+      let response;
       switch (type) {
-        case 'absent_today':
-          if (!selectedSession) {
-            showError('Please select a session first.');
-            return;
-          }
-          await notifyApi.sendAbsentToday(selectedSession);
-          showSuccess('Absence notifications sent to absent students.');
-          break;
         case 'low_attendance':
           if (!selectedSubject) {
             showError('Please select a subject first.');
             return;
           }
-          await notifyApi.sendLowAttendance(selectedSubject);
+          response = await notifyApi.sendLowAttendance(selectedSubject);
           showSuccess(
             'Low attendance alerts sent to at-risk students and parents.',
           );
@@ -71,16 +64,18 @@ export default function Notifications() {
             showError('Please select a subject first.');
             return;
           }
-          await notifyApi.sendMarksPublished(selectedSubject);
+          response = await notifyApi.sendMarksPublished(selectedSubject);
           showSuccess('Marks report sent to all students and parents.');
           break;
         case 'hod_report':
-          await notifyApi.sendHodReport();
+          response = await notifyApi.sendHodReport();
           showSuccess('Full attendance summary sent to HOD.');
           break;
         default:
           break;
       }
+      setLastSendType(type);
+      setLastSendResults(response?.data?.results || []);
       fetchLog();
     } catch (err) {
       showError(
@@ -93,30 +88,6 @@ export default function Notifications() {
   };
 
   const notificationTypes = [
-    {
-      id: 'absent_today',
-      title: "Today's Absent Students",
-      desc: 'Send attendance email to students who were absent in the selected session.',
-      recipients: 'Absent students only',
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-          />
-        </svg>
-      ),
-      color: 'bg-slate-600',
-      requiresSession: true,
-      requiresSubject: false,
-    },
     {
       id: 'low_attendance',
       title: 'Low Attendance Warning',
@@ -138,7 +109,6 @@ export default function Notifications() {
         </svg>
       ),
       color: 'bg-amber-500',
-      requiresSession: false,
       requiresSubject: true,
     },
     {
@@ -162,7 +132,6 @@ export default function Notifications() {
         </svg>
       ),
       color: 'bg-indigo-600',
-      requiresSession: false,
       requiresSubject: true,
     },
     {
@@ -186,7 +155,6 @@ export default function Notifications() {
         </svg>
       ),
       color: 'bg-violet-600',
-      requiresSession: false,
       requiresSubject: false,
     },
   ];
@@ -324,50 +292,17 @@ export default function Notifications() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-4">
-          Configuration
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">
-              Subject
-            </label>
-            <select
-              value={selectedSubject}
-              onChange={(e) => setSelectedSubject(Number(e.target.value))}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
-            >
-              <option value="">Select a subject</option>
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.code})
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">
-              Session ID{' '}
-              <span className="text-slate-400 normal-case font-normal">
-                (for absent-today alert)
-              </span>
-            </label>
-            <input
-              type="number"
-              value={selectedSession}
-              onChange={(e) => setSelectedSession(e.target.value)}
-              placeholder="Enter session ID"
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-            />
-          </div>
-        </div>
-      </div>
-
       <div>
         <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-4">
           Send Notifications
         </h2>
+        <p className="text-xs text-slate-500 mb-3">
+          Active subject:{' '}
+          <span className="font-medium text-slate-700">
+            {subjects.find((s) => s.id === Number(selectedSubject))?.name ||
+              'No subject selected'}
+          </span>
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {notificationTypes.map((n) => (
             <div
@@ -410,8 +345,7 @@ export default function Notifications() {
                   onClick={() => handleSend(n.id)}
                   disabled={
                     sending === n.id ||
-                    (n.requiresSubject && !selectedSubject) ||
-                    (n.requiresSession && !selectedSession)
+                    (n.requiresSubject && !selectedSubject)
                   }
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white ${n.color} hover:opacity-90 shadow-sm`}
                 >
@@ -464,6 +398,63 @@ export default function Notifications() {
       </div>
 
       <div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
+              Last Send Results
+            </h2>
+            {lastSendType && (
+              <span className="text-xs text-slate-500 capitalize">
+                Type: {lastSendType.replace(/_/g, ' ')}
+              </span>
+            )}
+          </div>
+          {lastSendResults.length === 0 ? (
+            <p className="text-sm text-slate-400">
+              No send results yet. Click Send to see recipient-level status.
+            </p>
+          ) : (
+            <div className="max-h-72 overflow-y-auto border border-slate-100 rounded-xl">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th className="px-4 py-2 text-left font-medium">Recipient</th>
+                    <th className="px-4 py-2 text-left font-medium">Role</th>
+                    <th className="px-4 py-2 text-left font-medium">Student</th>
+                    <th className="px-4 py-2 text-center font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {lastSendResults.map((r, idx) => (
+                    <tr key={`${r.recipient_email}-${idx}`}>
+                      <td className="px-4 py-2 text-xs font-mono text-slate-700">
+                        {r.recipient_email}
+                      </td>
+                      <td className="px-4 py-2 text-slate-600 capitalize">
+                        {r.recipient_role}
+                      </td>
+                      <td className="px-4 py-2 text-slate-600">
+                        {r.student_name || '—'}
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                            r.status === 'sent'
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                              : 'text-red-700 bg-red-50 border-red-200'
+                          }`}
+                        >
+                          {r.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wider">
             Notification Log

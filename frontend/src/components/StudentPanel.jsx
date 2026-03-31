@@ -281,21 +281,12 @@ export default function StudentPanel({ studentId, onClose }) {
                               </span>
                             </div>
                           </div>
-                          <div className="grid grid-cols-5 gap-2 mb-3">
+                          <div className="grid grid-cols-4 gap-2 mb-3">
                             {[
-                              { label: 'IA 1', value: m.ia1_score, max: 25 },
-                              { label: 'IA 2', value: m.ia2_score, max: 25 },
-                              { label: 'Model', value: m.model_score, max: 25 },
-                              {
-                                label: 'Assign.',
-                                value: m.assignment_score,
-                                max: 10,
-                              },
-                              {
-                                label: 'Attend.',
-                                value: m.attendance_marks,
-                                max: 5,
-                              },
+                              { label: 'CLA 1', value: m.cla1_score, max: 15 },
+                              { label: 'CLA 2', value: m.cla2_score, max: 15 },
+                              { label: 'CLA 3', value: m.cla3_score, max: 15 },
+                              { label: 'Model', value: m.model_score, max: 40 },
                             ].map((item) => (
                               <div
                                 key={item.label}
@@ -320,7 +311,7 @@ export default function StudentPanel({ studentId, onClose }) {
                             <span
                               className={`text-base font-bold ${m.total != null && m.total < 50 ? 'text-red-600' : 'text-slate-800'}`}
                             >
-                              {m.total != null ? m.total.toFixed(1) : '—'} / 90
+                              {m.total != null ? m.total.toFixed(1) : '—'} / 85
                             </span>
                           </div>
                         </div>

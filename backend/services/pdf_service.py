@@ -20,7 +20,7 @@ def generate_marks_pdf(subject, marks):
     elements.append(Paragraph(f"Mark Sheet — {subject.name} ({subject.code}) | Semester {subject.semester}", sub_style))
     elements.append(Spacer(1, 0.3*cm))
 
-    headers = ["#", "Roll No", "Student Name", "IA 1\n/25", "IA 2\n/25", "Model\n/25", "Assign.\n/10", "Attend.\n/5", "Total\n/90", "Grade", "Result"]
+    headers = ["#", "Roll No", "Student Name", "CLA 1\n/15", "CLA 2\n/15", "CLA 3\n/15", "Model\n/40", "Total\n/85", "Grade", "Result"]
 
     data = [headers]
 
@@ -31,18 +31,17 @@ def generate_marks_pdf(subject, marks):
             str(idx + 1),
             m.student.roll_number if m.student else "—",
             m.student.name if m.student else "—",
-            str(m.ia1_score) if m.ia1_score is not None else "—",
-            str(m.ia2_score) if m.ia2_score is not None else "—",
+            str(m.cla1_score) if m.cla1_score is not None else "—",
+            str(m.cla2_score) if m.cla2_score is not None else "—",
+            str(m.cla3_score) if m.cla3_score is not None else "—",
             str(m.model_score) if m.model_score is not None else "—",
-            str(m.assignment_score) if m.assignment_score is not None else "—",
-            str(m.attendance_marks) if m.attendance_marks is not None else "—",
             str(round(m.total, 1)) if m.total is not None else "—",
             grade,
             result,
         ]
         data.append(row)
 
-    col_widths = [1*cm, 2.5*cm, 4.5*cm, 1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm, 1.5*cm]
+    col_widths = [1*cm, 2.5*cm, 5*cm, 1.6*cm, 1.6*cm, 1.6*cm, 1.8*cm, 1.8*cm, 1.6*cm, 1.6*cm]
 
     table = Table(data, colWidths=col_widths, repeatRows=1)
     table.setStyle(TableStyle([

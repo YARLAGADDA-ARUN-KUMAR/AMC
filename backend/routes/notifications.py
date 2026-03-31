@@ -46,6 +46,7 @@ def notify_absent_today():
     subject = Subject.query.get(session.subject_id)
     sent_count = 0
     failed_count = 0
+    results = []
 
     for record in absent_records:
         student = User.query.get(record.student_id)
@@ -66,6 +67,12 @@ def notify_absent_today():
 
         status = send_email(student.email, subject_line, body)
         log_notification("absent_today", student.email, "student", subject_line, user_id, status)
+        results.append({
+            "recipient_email": student.email,
+            "recipient_role": "student",
+            "student_name": student.name,
+            "status": status,
+        })
 
         if status == "sent":
             sent_count += 1
@@ -78,6 +85,7 @@ def notify_absent_today():
         "message": f"Notifications sent. {sent_count} delivered, {failed_count} failed.",
         "sent": sent_count,
         "failed": failed_count,
+        "results": results,
     }), 200
 
 
@@ -95,6 +103,7 @@ def notify_low_attendance():
     subject = Subject.query.get(subject_id)
     sent_count = 0
     failed_count = 0
+    results = []
 
     for record in summary:
         pct = record["percentage"]
@@ -138,6 +147,12 @@ def notify_low_attendance():
 
         status = send_email(student.email, subject_line, body)
         log_notification("low_attendance", student.email, "student", subject_line, user_id, status)
+        results.append({
+            "recipient_email": student.email,
+            "recipient_role": "student",
+            "student_name": student.name,
+            "status": status,
+        })
         if status == "sent":
             sent_count += 1
         else:
@@ -158,6 +173,12 @@ def notify_low_attendance():
             """
             p_status = send_email(student.parent_email, parent_subject, parent_body)
             log_notification("low_attendance", student.parent_email, "parent", parent_subject, user_id, p_status)
+            results.append({
+                "recipient_email": student.parent_email,
+                "recipient_role": "parent",
+                "student_name": student.name,
+                "status": p_status,
+            })
 
         if pct < 75:
             hod_users = User.query.filter_by(role="hod").all()
@@ -177,6 +198,12 @@ def notify_low_attendance():
                     """
                     h_status = send_email(hod.email, hod_subject, hod_body)
                     log_notification("low_attendance", hod.email, "hod", hod_subject, user_id, h_status)
+                    results.append({
+                        "recipient_email": hod.email,
+                        "recipient_role": "hod",
+                        "student_name": student.name,
+                        "status": h_status,
+                    })
 
     db.session.commit()
 
@@ -184,6 +211,7 @@ def notify_low_attendance():
         "message": f"Low attendance alerts sent. {sent_count} delivered, {failed_count} failed.",
         "sent": sent_count,
         "failed": failed_count,
+        "results": results,
     }), 200
 
 
@@ -204,6 +232,7 @@ def notify_marks_published():
     marks_list = Marks.query.filter_by(subject_id=subject_id).all()
     sent_count = 0
     failed_count = 0
+    results = []
 
     for mark in marks_list:
         student = User.query.get(mark.student_id)
@@ -223,12 +252,11 @@ def notify_marks_published():
         <p>Your marks for <strong>{subject.name} ({subject.code})</strong> have been published.</p>
         <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%;">
             <tr style="background:#f1f5f9;"><th>Component</th><th>Score</th><th>Max</th></tr>
-            <tr><td>Internal Assessment 1</td><td>{mark.ia1_score if mark.ia1_score is not None else '—'}</td><td>25</td></tr>
-            <tr><td>Internal Assessment 2</td><td>{mark.ia2_score if mark.ia2_score is not None else '—'}</td><td>25</td></tr>
-            <tr><td>Model Examination</td><td>{mark.model_score if mark.model_score is not None else '—'}</td><td>25</td></tr>
-            <tr><td>Assignment</td><td>{mark.assignment_score if mark.assignment_score is not None else '—'}</td><td>10</td></tr>
-            <tr><td>Attendance Marks</td><td>{mark.attendance_marks if mark.attendance_marks is not None else '—'}</td><td>5</td></tr>
-            <tr style="background:#f8fafc;font-weight:bold;"><td>Total</td><td>{mark.total if mark.total is not None else '—'}</td><td>90</td></tr>
+            <tr><td>CLA 1</td><td>{mark.cla1_score if mark.cla1_score is not None else '—'}</td><td>15</td></tr>
+            <tr><td>CLA 2</td><td>{mark.cla2_score if mark.cla2_score is not None else '—'}</td><td>15</td></tr>
+            <tr><td>CLA 3</td><td>{mark.cla3_score if mark.cla3_score is not None else '—'}</td><td>15</td></tr>
+            <tr><td>Model Examination</td><td>{mark.model_score if mark.model_score is not None else '—'}</td><td>40</td></tr>
+            <tr style="background:#f8fafc;font-weight:bold;"><td>Total</td><td>{mark.total if mark.total is not None else '—'}</td><td>85</td></tr>
         </table>
         <p>Grade: <strong>{grade}</strong> &nbsp;|&nbsp; Result: <strong style="color:{color};">{status_text}</strong></p>
         <br>
@@ -238,6 +266,12 @@ def notify_marks_published():
 
         s = send_email(student.email, subject_line, body)
         log_notification("marks_published", student.email, "student", subject_line, user_id, s)
+        results.append({
+            "recipient_email": student.email,
+            "recipient_role": "student",
+            "student_name": student.name,
+            "status": s,
+        })
         if s == "sent":
             sent_count += 1
         else:
@@ -247,6 +281,12 @@ def notify_marks_published():
             p_subject = f"Marks Published — {student.name} — {subject.name}"
             p_status = send_email(student.parent_email, p_subject, body)
             log_notification("marks_published", student.parent_email, "parent", p_subject, user_id, p_status)
+            results.append({
+                "recipient_email": student.parent_email,
+                "recipient_role": "parent",
+                "student_name": student.name,
+                "status": p_status,
+            })
 
         if is_fail:
             hod_users = User.query.filter_by(role="hod").all()
@@ -257,7 +297,7 @@ def notify_marks_published():
                     <html><body>
                     <h2 style="color:#dc2626;">Arrear Alert</h2>
                     <p>Dear HOD,</p>
-                    <p><strong>{student.name}</strong> ({student.roll_number}) has scored <strong>{mark.total}</strong>/90 in <strong>{subject.name}</strong> and has been flagged with an arrear.</p>
+                    <p><strong>{student.name}</strong> ({student.roll_number}) has scored <strong>{mark.total}</strong>/85 in <strong>{subject.name}</strong> and has been flagged with an arrear.</p>
                     <p>Grade: {grade}</p>
                     <br>
                     <p>Academic Monitoring System</p>
@@ -265,6 +305,12 @@ def notify_marks_published():
                     """
                     h_status = send_email(hod.email, hod_subject, hod_body)
                     log_notification("arrear_alert", hod.email, "hod", hod_subject, user_id, h_status)
+                    results.append({
+                        "recipient_email": hod.email,
+                        "recipient_role": "hod",
+                        "student_name": student.name,
+                        "status": h_status,
+                    })
 
     db.session.commit()
 
@@ -272,6 +318,7 @@ def notify_marks_published():
         "message": f"Marks notifications sent. {sent_count} delivered, {failed_count} failed.",
         "sent": sent_count,
         "failed": failed_count,
+        "results": results,
     }), 200
 
 
@@ -301,6 +348,7 @@ def notify_hod_report():
 
     sent_count = 0
     failed_count = 0
+    results = []
 
     for hod in hod_users:
         if not hod.email:
@@ -330,6 +378,11 @@ def notify_hod_report():
 
         status = send_email(hod.email, subject_line, body)
         log_notification("hod_report", hod.email, "hod", subject_line, user_id, status)
+        results.append({
+            "recipient_email": hod.email,
+            "recipient_role": "hod",
+            "status": status,
+        })
         if status == "sent":
             sent_count += 1
         else:
@@ -341,6 +394,7 @@ def notify_hod_report():
         "message": f"HOD report sent to {sent_count} HOD(s).",
         "sent": sent_count,
         "failed": failed_count,
+        "results": results,
     }), 200
 
 

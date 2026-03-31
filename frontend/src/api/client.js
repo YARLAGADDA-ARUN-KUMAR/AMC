@@ -80,8 +80,6 @@ export const marksApi = {
 
   update: (marks_id, data) => api.put(`/marks/${marks_id}`, data),
 
-  submit: (subject_id) => api.post(`/marks/${subject_id}/submit`),
-
   getStats: (subject_id) => api.get(`/marks/${subject_id}/stats`),
 
   downloadPdf: (subject_id) =>
