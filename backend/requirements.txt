@@ -10,3 +10,4 @@ torch
 torchvision
 numpy
 Pillow
+facenet-pytorch==2.6.0

@@ -85,17 +85,21 @@ class FaceRecognitionService:
         """
         embeddings = []
         for img_b64 in base64_images:
-            frame = self.decode_base64_image(img_b64)
-            if frame is None:
+            try:
+                frame = self.decode_base64_image(img_b64)
+                if frame is None:
+                    continue
+                faces = self.detect_faces(frame)
+                if len(faces) == 0:
+                    continue
+                # Use the largest face
+                largest = max(faces, key=lambda f: f[2] * f[3])
+                emb = self.get_face_embedding(frame, tuple(largest))
+                if emb is not None:
+                    embeddings.append(emb)
+            except Exception:
+                # Skip images that fail to process
                 continue
-            faces = self.detect_faces(frame)
-            if len(faces) == 0:
-                continue
-            # Use the largest face
-            largest = max(faces, key=lambda f: f[2] * f[3])
-            emb = self.get_face_embedding(frame, tuple(largest))
-            if emb is not None:
-                embeddings.append(emb)
 
         if len(embeddings) == 0:
             return None

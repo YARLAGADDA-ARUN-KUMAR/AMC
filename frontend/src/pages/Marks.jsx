@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState } from 'react';
-import { subjectsApi, studentsApi, marksApi, notifyApi } from '../api/client';
+import { marksApi, notifyApi, studentsApi, subjectsApi } from '../api/client';
 import MarksTable from '../components/MarksTable';
 import StatsSummary from '../components/StatsSummary';
 import StudentPanel from '../components/StudentPanel';
@@ -13,8 +13,6 @@ export default function Marks() {
   const [tab, setTab] = useState('entry');
   const [notifying, setNotifying] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const [arrears, setArrears] = useState([]);
-  const [loadingArrears, setLoadingArrears] = useState(false);
 
   useEffect(() => {
     subjectsApi.list().then((res) => {
@@ -26,15 +24,12 @@ export default function Marks() {
 
   useEffect(() => {
     if (!selectedSubject) return;
-    setLoadingArrears(true);
     marksApi
       .getBySubject(selectedSubject)
       .then((res) => {
         const failed = res.data.filter((m) => m.total != null && m.total < 50);
-        setArrears(failed);
+
       })
-      .catch(() => setArrears([]))
-      .finally(() => setLoadingArrears(false));
   }, [selectedSubject]);
 
   const showSuccess = (msg) => {
@@ -55,21 +50,7 @@ export default function Marks() {
     }
   };
 
-  const handleDownloadPdf = async () => {
-    try {
-      const res = await marksApi.downloadPdf(selectedSubject);
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `marksheet_subject_${selectedSubject}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      showSuccess('PDF mark sheet downloaded.');
-    } catch {
-      alert('Failed to download PDF.');
-    }
-  };
+
 
   const getGrade = (total) => {
     if (total == null) return '—';
@@ -93,7 +74,6 @@ export default function Marks() {
   const tabs = [
     { key: 'entry', label: 'Marks Entry' },
     { key: 'stats', label: 'Statistics' },
-    { key: 'arrears', label: `Arrears (${arrears.length})` },
   ];
 
   const currentSubject = subjects.find((s) => s.id === Number(selectedSubject));
@@ -177,26 +157,7 @@ export default function Marks() {
           )}
 
           <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={handleDownloadPdf}
-              disabled={!selectedSubject}
-              className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-colors"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                />
-              </svg>
-              Export PDF
-            </button>
+
             <button
               onClick={handleNotifyMarks}
               disabled={notifying || !selectedSubject}
@@ -309,127 +270,6 @@ export default function Marks() {
         </div>
       )}
 
-      {tab === 'arrears' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-slate-800">
-                Arrear Tracker
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Students scoring below 50 marks in this subject
-              </p>
-            </div>
-            <span className="px-3 py-1 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full">
-              {arrears.length} arrear{arrears.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {loadingArrears ? (
-            <div className="p-8 text-center text-slate-400 text-sm animate-pulse">
-              Loading arrear data...
-            </div>
-          ) : arrears.length === 0 ? (
-            <div className="text-center py-12">
-              <svg
-                className="w-10 h-10 text-emerald-400 mx-auto mb-3"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <p className="text-slate-500 font-medium">No arrears</p>
-              <p className="text-slate-400 text-sm mt-1">
-                All students have passed this subject
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 border-b border-slate-100">
-                    <th className="px-6 py-3 text-left font-medium">#</th>
-                    <th className="px-6 py-3 text-left font-medium">Roll No</th>
-                    <th className="px-6 py-3 text-left font-medium">Student</th>
-                    <th className="px-6 py-3 text-center font-medium">IA 1</th>
-                    <th className="px-6 py-3 text-center font-medium">IA 2</th>
-                    <th className="px-6 py-3 text-center font-medium">Model</th>
-                    <th className="px-6 py-3 text-center font-medium">
-                      Assign.
-                    </th>
-                    <th className="px-6 py-3 text-center font-medium">
-                      Attend.
-                    </th>
-                    <th className="px-6 py-3 text-center font-medium">Total</th>
-                    <th className="px-6 py-3 text-center font-medium">Grade</th>
-                    <th className="px-6 py-3 text-center font-medium">
-                      Profile
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {arrears.map((m, idx) => {
-                    const grade = getGrade(m.total);
-                    return (
-                      <tr
-                        key={m.student_id}
-                        className="bg-red-50/40 hover:bg-red-50 transition-colors"
-                      >
-                        <td className="px-6 py-3 text-slate-400">{idx + 1}</td>
-                        <td className="px-6 py-3 font-mono text-slate-600">
-                          {m.roll_number}
-                        </td>
-                        <td className="px-6 py-3 font-medium text-slate-800">
-                          {m.student_name}
-                        </td>
-                        <td className="px-6 py-3 text-center text-slate-600">
-                          {m.ia1_score ?? '—'}
-                        </td>
-                        <td className="px-6 py-3 text-center text-slate-600">
-                          {m.ia2_score ?? '—'}
-                        </td>
-                        <td className="px-6 py-3 text-center text-slate-600">
-                          {m.model_score ?? '—'}
-                        </td>
-                        <td className="px-6 py-3 text-center text-slate-600">
-                          {m.assignment_score ?? '—'}
-                        </td>
-                        <td className="px-6 py-3 text-center text-slate-600">
-                          {m.attendance_marks ?? '—'}
-                        </td>
-                        <td className="px-6 py-3 text-center font-bold text-red-700">
-                          {m.total != null ? m.total.toFixed(1) : '—'}
-                        </td>
-                        <td className="px-6 py-3 text-center">
-                          <span
-                            className={`text-xs font-bold px-2.5 py-1 rounded-full border ${gradeColor(grade)}`}
-                          >
-                            {grade}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-center">
-                          <button
-                            onClick={() => setSelectedStudent(m.student_id)}
-                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium underline underline-offset-2"
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
 
       {selectedStudent && (
         <StudentPanel

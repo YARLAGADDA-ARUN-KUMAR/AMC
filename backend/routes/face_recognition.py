@@ -27,32 +27,40 @@ def register_face():
     Register a student's face from multiple webcam photos.
     Expects { student_id: int, images: ["base64...", ...] }
     """
-    data = request.get_json()
-    student_id = data.get("student_id")
-    images = data.get("images", [])
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"message": "Invalid JSON data."}), 400
 
-    if not student_id or len(images) == 0:
-        return jsonify({"message": "student_id and at least one image are required."}), 400
+        student_id = data.get("student_id")
+        images = data.get("images", [])
 
-    student = User.query.get(student_id)
-    if not student:
-        return jsonify({"message": "Student not found."}), 404
+        if not student_id or len(images) == 0:
+            return jsonify({"message": "student_id and at least one image are required."}), 400
 
-    service = get_face_service()
-    embedding = service.register_face(images)
+        student = User.query.get(student_id)
+        if not student:
+            return jsonify({"message": "Student not found."}), 404
 
-    if embedding is None:
-        return jsonify({"message": "No face detected in any of the photos. Please try again with better lighting and face the camera directly."}), 400
+        service = get_face_service()
+        embedding = service.register_face(images)
 
-    # Store embedding as JSON string in the database
-    student.face_encoding = json.dumps(embedding)
-    db.session.commit()
+        if embedding is None:
+            return jsonify({"message": "No face detected in any of the photos. Please try again with better lighting and face the camera directly."}), 400
 
-    return jsonify({
-        "message": f"Face registered successfully for {student.name}.",
-        "student_id": student.id,
-        "student_name": student.name,
-    }), 200
+        # Store embedding as JSON string in the database
+        student.face_encoding = json.dumps(embedding)
+        db.session.commit()
+
+        return jsonify({
+            "message": f"Face registered successfully for {student.name}.",
+            "student_id": student.id,
+            "student_name": student.name,
+        }), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"message": f"Server error: {str(e)}"}), 500
 
 
 @face_bp.route("/recognize", methods=["POST"])
